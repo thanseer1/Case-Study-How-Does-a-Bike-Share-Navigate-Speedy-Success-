@@ -1,0 +1,440 @@
+---
+title: "Bike-Share Navigate Speedy Success"
+author: "THANSEER"
+date: '2022-06-15'
+output: html_document
+---
+
+## Case study: How Does a Bike-Share Navigate Speedy Success?
+
+## Introduction
+
+You are a junior data analyst working in the marketing analyst team at Cyclistic, a bike-share company in Chicago. The director
+of marketing believes the company’s future success depends on maximizing the number of annual memberships. Therefore,
+your team wants to understand how casual riders and annual members use Cyclistic bikes differently. From these insights,
+your team will design a new marketing strategy to convert casual riders into annual members. But first, Cyclistic executives
+must approve your recommendations, so they must be backed up with compelling data insights and professional data
+visualizations.
+
+
+## Ask
+
+Three questions will guide the future marketing program:
+
+* How do annual members and casual riders use Cyclistic bikes differently?
+* Why would casual riders buy Cyclistic annual memberships?
+* How can Cyclistic use digital media to influence casual riders to become members?
+
+## Prepare
+
+* Verify data’s integrity
+* Check data credibility and reliability
+* Check data types
+* Merge datasets
+
+## Process
+
+* Clean, Remove and Transform data
+* Document cleaning processes and results
+
+## Analyze
+
+* Identify patterns
+* Draw conclusions
+* Make predictions
+
+## Share
+
+* Create effective visuals
+* Create a story for data
+* Share insights to stakeholders
+
+## Act
+
+* Give recommendations based on insights
+* Solve problems
+* Create something new
+
+
+
+## install libraries
+
+```{r}
+install.packages("tidyverse")
+install.packages("janitor")
+install.packages("scales")
+
+```
+Load libraries
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(lubridate)
+library(dplyr)
+library(readr)
+library(janitor)
+library(data.table)
+library(tidyr)
+```
+
+
+
+Load datasets
+
+```{r}
+tripdata_202004 <- read.csv("all/202004-divvy-tripdata.csv")
+tripdata_202005 <- read.csv("all/202005-divvy-tripdata.csv")
+tripdata_202006 <- read.csv("all/202006-divvy-tripdata.csv")
+tripdata_202007 <- read.csv("all/202007-divvy-tripdata.csv")
+tripdata_202008 <- read.csv("all/202008-divvy-tripdata.csv")
+tripdata_202009 <- read.csv("all/202009-divvy-tripdata.csv")
+tripdata_202010 <- read.csv("all/202010-divvy-tripdata.csv") 
+tripdata_202011 <- read.csv("all/202011-divvy-tripdata.csv")
+tripdata_202012 <- read.csv("all/202012-divvy-tripdata.csv")
+tripdata_202101 <- read.csv("all/202101-divvy-tripdata.csv")
+tripdata_202102 <- read.csv("all/202102-divvy-tripdata.csv")
+tripdata_202103 <- read.csv("all/202103-divvy-tripdata.csv")
+
+```
+
+
+Check column names of each dataset for consistency
+
+```{r}
+
+colnames(tripdata_202004)
+colnames(tripdata_202005)
+colnames(tripdata_202006)
+colnames(tripdata_202007)
+colnames(tripdata_202008)
+colnames(tripdata_202009)
+colnames(tripdata_202010)
+colnames(tripdata_202011)
+colnames(tripdata_202012)
+colnames(tripdata_202101)
+colnames(tripdata_202102)
+colnames(tripdata_202103)
+```
+Check data structures and data types for all data frames
+```{r}
+
+str(tripdata_202004)
+str(tripdata_202005)
+str(tripdata_202006)
+str(tripdata_202007)
+str(tripdata_202008)
+str(tripdata_202009)
+str(tripdata_202010)
+str(tripdata_202011)
+str(tripdata_202012)
+str(tripdata_202101)
+str(tripdata_202102)
+str(tripdata_202103)
+```
+### Data transformation and cleaning
+
+tart_station_id & end_station_id are not consistent in all datasets.Convert the inconsistent ones from int to char datatype.
+```{r}
+tripdata_202004 <- tripdata_202004 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+tripdata_202005 <- tripdata_202005 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+tripdata_202006 <- tripdata_202006 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+tripdata_202008 <- tripdata_202008 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+tripdata_202009 <- tripdata_202009 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+tripdata_202010 <- tripdata_202010 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+tripdata_202011 <- tripdata_202011 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+tripdata_202007 <- tripdata_202007 %>% mutate(start_station_id = as.character(start_station_id), end_station_id = as.character(end_station_id))
+```
+
+
+###  3. Process
+Combine all the datasets into one single dataframe
+
+```{r}
+all_trips <- bind_rows(tripdata_202004,tripdata_202005,tripdata_202006,tripdata_202007,tripdata_202008,tripdata_202009,tripdata_202010,tripdata_202011,tripdata_202012,tripdata_202101,tripdata_202102,tripdata_202103)
+
+str(all_trips)
+                
+```
+
+
+### Clean-up further!
+Hold on! started_at & ended_at should be in datetime datatype instead of char. Convert all from char to datetime
+
+```{r}
+all_trips[['started_at']] <- ymd_hms(all_trips[['started_at']])
+all_trips[['ended_at']] <- ymd_hms(all_trips[['ended_at']])
+
+str(all_trips)
+```
+
+###  Remove columns not required or beyond the scope of project
+```{r}
+all_trips <- all_trips %>%
+    select(-c(start_lat:end_lng))
+glimpse(all_trips)
+```
+
+
+###  Rename columns for better readability
+```{r}
+all_trips <- all_trips %>%
+    rename(ride_type = rideable_type, 
+           start_time = started_at,
+           end_time = ended_at,
+           customer_type = member_casual)
+glimpse(all_trips)
+```
+
+### Removing duplicates
+```{r}
+new_all_trips <- all_trips[!duplicated(all_trips$ride_id), ]
+
+glimpse(new_all_trips)
+```
+###  Add new columns that can be used for aggregate functions
+
+```{r}
+new_all_trips$day_of_the_week <- format(as.Date(new_all_trips$start_time),'%a')
+new_all_trips$month <- format(as.Date(new_all_trips$start_time),'%b_%y')
+
+
+```
+
+
+
+```{r}
+new_all_trips$time <- format(new_all_trips$start_time, format = "%H:%M")
+new_all_trips$time <- as.POSIXct(new_all_trips$time, format = "%H:%M")
+```
+
+
+### find time duration
+
+```{r}
+new_all_trips$trip_duration <- (as.double(difftime(new_all_trips$end_time, new_all_trips$start_time)))/60
+
+```
+
+
+
+
+```{r}
+glimpse(new_all_trips)
+```
+
+
+Let's check to see if the trip_duration column has any negative values, as this may cause problem while creating visualizations. Also, we do not want to include the trips that were part of quality tests by the company. These trips are usually identified by string 'test' in the start_station_name column.
+
+```{r}
+nrow(subset(new_all_trips,trip_duration < 0))
+```
+### checking for testrides that were made by company for quality checks
+
+```{r}
+nrow(subset(new_all_trips, start_station_name %like% "TEST"))
+nrow(subset(new_all_trips, start_station_name %like% "test"))
+nrow(subset(new_all_trips, start_station_name %like% "Test"))
+```
+As there are 10343 rows with trip_dration less than 0 mins and 3367 trips that were test rides, we will remove these observations from our dataframe as they contribute to only about 0.3% of the total rows. We will create a new dataframe deviod of these obseravtions without making any changes to the existing dataframe.
+
+```{r}
+all_trips_v2 <- new_all_trips[!(new_all_trips$trip_duration < 0),]
+```
+
+```{r}
+all_trips_v2<- all_trips_v2[!((all_trips_v2$start_station_name %like% "TEST" | all_trips_v2$start_station_name %like% "test")),]
+```
+
+
+```{r}
+glimpse(all_trips_v2)
+```
+
+It is important to make sure that customer_type column has only two distinct values. Let's confirm the same.
+```{r}
+table(all_trips_v2$customer_type)
+```
+
+
+```{r}
+setNames(aggregate(trip_duration ~ customer_type, all_trips_v2, sum), c("customer_type", "total_trip_duration(mins)"))
+```
+
+
+
+## Analyze and Share the Data
+
+```{r}
+summary(all_trips_v2$trip_duration)
+```
+
+
+
+```{r}
+all_trips_v2 %>%
+    group_by(customer_type) %>%
+    summarise(min_trip_duration = min(trip_duration),max_trip_duration = max(trip_duration),
+              median_trip_duration = median(trip_duration), mean_trip_duration = mean(trip_duration))
+```
+
+
+The mean trip duration of member riders is lower than the mean trip duration of all trips, while it is exactly the opposite for casual riders, whose mean trip duration is higher than the the mean trip duration of all trips. This tells us that casual riders usually take the bikes out for a longer duration compared to members
+
+### Total number of trips by customer type and day of the week
+
+```{r}
+all_trips_v2$day_of_the_week <- ordered(all_trips_v2$day_of_the_week, levels=c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"))
+```
+
+
+```{r}
+all_trips_v2$month <- ordered(all_trips_v2$month, levels=c("Apr_20", "May_20", "Jun_20", "Jul_20", "Aug_20", "Sep_20", "Oct_20","Nov_20", "Dec_20", "Jan_21", "Feb_21", "Mar_21", "Apr_21", "May_21", "Jun_21", "Jul_21"))
+```
+
+```{r}
+all_trips_v2 %>% 
+  group_by(customer_type, day_of_the_week) %>%  
+  summarise(number_of_rides = n(),average_duration_mins = mean(trip_duration)) %>% 
+  arrange(customer_type, desc(number_of_rides))
+```
+
+
+
+###  Visualization:
+
+```{r}
+all_trips_v2 %>%  
+  group_by(customer_type, day_of_the_week) %>% 
+  summarise(number_of_rides = n()) %>% 
+  arrange(customer_type, day_of_the_week)  %>% 
+  ggplot(aes(x = day_of_the_week, y = number_of_rides, fill = customer_type)) +
+  labs(title ="Total trips by customer type Vs. Day of the week") +
+  geom_col(width=0.5, position = position_dodge(width=0.5)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+```
+From the table and graph above, casual customers are most busy on Sundays followed by Saturdays, while members are most busy on later half of the week extending into the weekend. Interesting pattern to note though is the consistent trip numbers among members with less spread over entire week as compared to casual riders who don't seem to use the bikeshare services much during weekdays
+
+
+### Average number of trips by customer type and month
+```{r}
+unique(new_all_trips$month)
+```
+
+```{r}
+all_trips_v2 %>% 
+  group_by(customer_type, month) %>%  
+  summarise(number_of_rides = n(),`average_duration_(mins)` = mean(trip_duration)) %>%
+  arrange(customer_type,desc(number_of_rides))
+```
+
+
+```{r}
+all_trips_v2 %>%  
+  group_by(customer_type, month) %>% 
+  summarise(number_of_rides = n()) %>% 
+  arrange(customer_type, month)  %>% 
+  ggplot(aes(x = month, y = number_of_rides, fill = customer_type)) +
+  labs(title ="Total trips by customer type Vs. Month") +
+  theme(axis.text.x = element_text(angle = 30)) +
+  geom_col(width=0.5, position = position_dodge(width=0.5)) +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE))
+
+```
+
+### Visualizaton of average trip duration by customer type on each day of the week
+```{r}
+
+all_trips_v2 %>%  
+  group_by(customer_type, day_of_the_week) %>% 
+  summarise(average_trip_duration = mean(trip_duration)) %>%
+  ggplot(aes(x = day_of_the_week, y = average_trip_duration, fill = customer_type)) +
+  geom_col(width=0.5, position = position_dodge(width=0.5)) + 
+  labs(title ="Average trip duration by customer type Vs. Day of the week")
+```
+
+### Visualizaton of average trip duration by customer type Vs. month
+```{r}
+all_trips_v2 %>%  
+  group_by(customer_type, month) %>% 
+  summarise(average_trip_duration = mean(trip_duration)) %>%
+  ggplot(aes(x = month, y = average_trip_duration, fill = customer_type)) +
+  geom_col(width=0.5, position = position_dodge(width=0.5)) + 
+  labs(title ="Average trip duration by customer type Vs. Month") +
+  theme(axis.text.x = element_text(angle = 30))
+```
+
+Average trip duration of member riders is anywhere between 10-20 minutes throughout the year, exception being April when it goes slightly over 20 minutes. However, there seems to be a distinct pattern when it comes to casual riders, whose average trip duration swings wildly from as low as ~25 minutes to more than an hour depending on time of the year. It is worth noting unusually long trip durations by casual riders in the month of April
+
+
+```{r}
+all_trips_v2 %>%  
+  group_by(customer_type, time) %>% 
+  summarise(number_of_trips = n()) %>%
+  ggplot(aes(x = time, y = number_of_trips, color = customer_type, group = customer_type)) +
+  geom_line() +
+  scale_x_datetime(date_breaks = "1 hour", minor_breaks = NULL,
+                   date_labels = "%H:%M", expand = c(0,0)) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title ="Demand over 24 hours of a day", x = "Time of the day")
+```
+```{r}
+all_trips_v2 %>%
+  group_by(ride_type, customer_type) %>%
+  summarise(number_of_trips = n()) %>%  
+  ggplot(aes(x= ride_type, y=number_of_trips, fill= customer_type))+
+              geom_bar(stat='identity') +
+  scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) +
+  labs(title ="Ride type Vs. Number of trips")
+```
+ Docked bikes are in most demand and equally used by both members
+ 
+### Creating a csv file of the clean data for futher analysis or visualizations in other tools like SQL, Tableau, Power BI, etc
+ 
+ 
+ 
+```{r}
+clean_data <- aggregate(all_trips_v2$trip_duration ~ all_trips_v2$customer_type + all_trips_v2$day_of_the_week, FUN = mean)
+```
+ 
+ 
+```{r}
+write.csv(clean_data, "Clean Data.csv", row.names = F)
+
+```
+ 
+## 6. Act
+
+### Key Takeaways
+
+*  Casual customers use bikeshare services more during weekends, while members use them consistently over the entire week.
+
+*  Average trip duration of casual riders is more than twice that of member rider over any given day of the week cumulatively.
+
+*  Casual riders ride longer during first half of the year compared to the second half, while members clock relatively similar average trip duration month over month.
+
+
+## Recommendations
+
+* Provide attractive promotions for casual riders on weekdays so that casual members use the bikeshare services ore uniformly across the entire week
+
+* Offer discounted membership fee for renewals after the first year. It might nudge casual riders to take up membership.
+
+*  Offer discounted pricing during non-busy hours so that casual riders might choose to use bikes more often and level out demand over the day
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
